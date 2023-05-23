@@ -1,0 +1,90 @@
+name: migrationDeployment
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  terraform-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    steps:
+      - name: Clone our repository
+        uses: actions/checkout@v3
+
+      - name: AWS Authentication
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::637448446398:role/github-actions-oidc
+          aws-region: eu-central-1
+          role-session-name: Githubmigrationdeploy
+      
+      - name: terraform setup
+        uses: hashicorp/setup-terraform@v1
+        
+      - name: terraform initialization
+        run: terraform init   
+
+      - name: terraform planning
+        run: terraform plan -lock=false
+
+      - name: terraform applying
+        run: terraform apply -auto-approve -lock=false     
+      
+      - name: terraform validating
+        run: terraform validate
+
+      - name: terraform format
+        run: terraform fmt
+
+  checkov:     
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: write
+      id-token: write
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.8
+    
+      - name: Set working directory
+        run: |
+          echo "WORKING-DIRECTORY=${{ github.workspace }}" >> $GITHUB_ENV
+      
+      - name: Test with Checkov
+        id: checkov
+        uses: bridgecrewio/checkov-action@master
+        with:
+          framework: terraform 
+          directory: ${{ env.WORKING-DIRECTORY }}
+          soft_fail: true
+          download_external_modules: false
+          quiet: true
+
+  tflint-check:
+    runs-on:  ubuntu-latest
+    permissions:
+      packages: write
+      contents: write
+      id-token: write
+    steps:      
+      - name: Setup TFLint 
+        uses: terraform-linters/setup-tflint@v3
+        with:
+          tflint_version: v0.44.1
+      
+      - name: Init TFLint
+        run: tflint --init
+        env:       
+          GITHUB_TOKEN: ${{ github.token }}
+      
+      - name: Run TFLint
+        run: tflint -f compact

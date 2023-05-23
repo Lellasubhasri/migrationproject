@@ -1,0 +1,52 @@
+name: Infracost Actions
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  terraform-deploy:
+    runs-on: ubuntu-latest
+    permissions: #write-all
+      contents: read
+      packages: write
+      id-token: write
+
+    env:
+      TF_ROOT: dev
+
+    steps:
+      - name: clone repository
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+
+      - name: Setup Infracost
+        uses: infracost/actions/setup@v2
+        with:
+          api-key: ${{ secrets.INFRACOST }}
+
+      - name: Generate Infracost cost estimate baseline
+        run: |
+          infracost breakdown --path=${TF_ROOT} \
+                              --format=json \
+                              --out-file=/tmp/infracost-base.json
+
+      - name: Generate Infracost diff
+        run: |
+          infracost diff --path=${TF_ROOT} \
+                          --format=json \
+                          --compare-to=/tmp/infracost-base.json \
+                          --out-file=/tmp/infracost.json
+      
+      # - name: Post Infracost comment
+      #   run: |
+      #     infracost comment github --path=/tmp/infracost.json \
+      #                               --repo=$GITHUB_REPOSITORY \
+      #                               --github-token=${{github.token}} \
+      #                               --pull-request=${{github.event.pull_request.number}} \
+      #                               --behavior=new                        

@@ -1,0 +1,25 @@
+repos:
+- repo: git@github.com:awslabs/git-secrets.git
+  rev: master # Get the latest from: https://github.com/gruntwork-io/pre-commit/releases
+  hooks:
+    -  id: git-secrets
+      name: Git Secrets
+
+  # - repo: git@github.com:antonbabenko/pre-commit-terraform.git
+  #   rev: master 
+  #   hooks:
+  #     - id: terraform_tflint
+  #       name: Terraform validate with tflint
+  - repo: https://github.com/terraform-docs/terraform-docs
+    rev: v0.16.0
+    hooks:
+      - id: terraform-docs-go
+        args: [“markdown”, “table”, “--output-file”, “README.md”, “./“]
+        
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.79.1
+    hooks:
+      - id: terraform_fmt
+      - id: terraform_tflint
+      - id: terraform_validate
+      - id: terraform_tfsec
