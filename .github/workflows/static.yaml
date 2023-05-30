@@ -31,8 +31,8 @@ jobs:
       - name: terraform planning
         run: terraform plan -lock=false
 
-      - name: terraform applying
-        run: terraform apply -auto-approve -lock=false     
+      # - name: terraform applying
+      #   run: terraform apply -auto-approve -lock=false     
       
       - name: terraform validating
         run: terraform validate
