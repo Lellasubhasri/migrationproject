@@ -3,7 +3,7 @@ name: Infracost Actions
 on:
   push:
     branches:
-      - main
+      - vpc
   pull_request:
     branches:
       - main
